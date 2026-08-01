@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>LiftLog</title>
+  <style>
+    body { font-family: sans-serif; max-width: 500px; margin: 40px auto; padding: 0 16px; }
+    input, button { display: block; width: 100%; margin-bottom: 10px; padding: 8px; }
+    #history-list div { padding: 8px 0; border-bottom: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+  <h1>LiftLog</h1>
+
+  <form id="log-form">
+    <input type="text" id="exercise" placeholder="Exercise" required>
+    <input type="number" id="sets" placeholder="Sets" required>
+    <input type="number" id="reps" placeholder="Reps" required>
+    <input type="number" id="weight" placeholder="Weight" required>
+    <button type="submit">Log Workout</button>
+  </form>
+
+  <h2>History</h2>
+  <div id="history-list"></div>
+
+  <script>
+    const API_BASE = "http://localhost:8080";
+
+    async function loadHistory() {
+      const container = document.getElementById("history-list");
+      try {
+        const res = await fetch(`${API_BASE}/history`);
+        const entries = await res.json();
+
+        container.innerHTML = "";
+        entries.forEach(entry => {
+          const line = document.createElement("div");
+          line.textContent = `${entry.exercise} - ${entry.sets}x${entry.reps} @ ${entry.weight} lbs (${entry.date})`;
+          container.appendChild(line);
+        });
+      } catch (err) {
+        container.textContent = "ERROR: " + err.message;
+      }
+    }
+
+    async function handleSubmit(event) {
+      event.preventDefault();
+
+      const exercise = document.getElementById("exercise").value;
+      const sets = Number(document.getElementById("sets").value);
+      const reps = Number(document.getElementById("reps").value);
+      const weight = Number(document.getElementById("weight").value);
+
+      try {
+        await fetch(`${API_BASE}/log`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ exercise, sets, reps, weight })
+        });
+
+        document.getElementById("log-form").reset();
+        loadHistory();
+      } catch (err) {
+        alert("Failed to save: " + err.message);
+      }
+    }
+
+    document.getElementById("log-form").addEventListener("submit", handleSubmit);
+
+    loadHistory();
+  </script>
+</body>
+</html>
+
